@@ -1,0 +1,11 @@
+@media (max-width: 800px) {
+  .filter-row,
+  .travel-detail-head { align-items: stretch; flex-direction: column; }
+  .tabs { overflow-x: auto; padding-bottom: 4px; }
+  .detail-image { height: 280px; }
+  .travel-detail-head h1 { font-size: 32px; }
+  .info-grid { grid-template-columns: 1fr; gap: 20px; }
+  .detail-actions { flex-wrap: wrap; }
+  .detail-actions .button { flex: 1; }
+  .state-error .button { display: flex; margin: 14px auto 0; }
+}
