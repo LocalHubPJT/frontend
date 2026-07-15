@@ -6,7 +6,38 @@ const route=useRoute(),router=useRouter(),post=ref(null),modal=ref(false),mode=r
 onMounted(async()=>{try{post.value=await service.post(route.params.id)}catch(e){alert(e.userMessage||e.message);router.push('/board')}finally{loading.value=false}})
 async function remove(){error.value='';try{await service.deletePost(route.params.id,password.value);router.push('/board')}catch(e){error.value=e.response?.data?.detail||e.message||'삭제에 실패했습니다.'}}
 function request(action){mode.value=action;password.value='';error.value='';modal.value=true}
-function confirm(){if(mode.value==='edit'){router.push({path:`/board/${route.params.id}/edit`,query:{password:password.value}});modal.value=false}else remove()}
+// function confirm(){if(mode.value==='edit'){router.push({path:`/board/${route.params.id}/edit`,query:{password:password.value}});modal.value=false}else remove()}
+async function confirm() {
+  error.value = ''
+
+  if (mode.value === 'edit') {
+    try {
+      // 비밀번호 확인
+      await service.verifyPassword(route.params.id, password.value)
+
+      // 비밀번호가 맞으면 수정 페이지로 이동
+      router.push({
+        path: `/board/${route.params.id}/edit`,
+        query: {
+          password: password.value
+        }
+      })
+
+      modal.value = false
+
+    } catch (e) {
+      // 틀리면 수정 페이지로 이동하지 않고 오류 표시
+      error.value =
+        e.userMessage ||
+        e.response?.data?.detail ||
+        e.message ||
+        '비밀번호가 일치하지 않습니다.'
+    }
+
+  } else {
+    remove()
+  }
+}
 function keydown(e){if(e.key==='Escape')modal.value=false}
 </script>
 <template><div v-if="loading&&!post" class="empty-state">게시글을 불러오는 중입니다…</div><article v-if="post" class="detail-page"><div class="breadcrumb"><router-link to="/board">커뮤니티</router-link><span>›</span><span>게시글 상세</span></div><header><span class="category-chip">익명 게시글</span><h1>{{post.title}}</h1><div class="detail-meta"><span>익명</span><span>{{new Date(post.created_at||post.createdAt).toLocaleString('ko-KR')}}</span><span>조회 {{post.view_count||post.views||0}}</span></div></header><div class="detail-content">{{post.content}}</div><div class="detail-actions"><button class="button ghost dark" @click="request('edit')">수정</button><button class="button danger" @click="request('delete')">삭제</button><router-link class="button" to="/board">목록</router-link></div></article>
