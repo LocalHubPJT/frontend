@@ -68,7 +68,7 @@ function render() {
 onMounted(() => {
   try {
     map = L.map(mapEl.value, {
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
     }).setView([36.3504, 127.3845], 12)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
