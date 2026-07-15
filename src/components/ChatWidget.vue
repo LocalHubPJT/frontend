@@ -1,5 +1,7 @@
 <script setup>
 import { nextTick, ref } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { service } from '../services/api'
 
 const open = ref(false)
@@ -17,9 +19,18 @@ const messages = ref([
 const questions = [
   '대전 관광지 추천해 줘',
   '대전 맛집 알려 줘',
-  '이번 달 축제 알려 줘',
-  '커뮤니티에서 여행 코스 찾아 줘',
+  '대전 축제 알려 줘',
+  '대전 여행 코스 찾아 줘',
 ]
+
+function renderMarkdown(content = '') {
+  const html = marked.parse(content, {
+    breaks: true,
+    gfm: true,
+  })
+
+  return DOMPurify.sanitize(html)
+}
 
 async function send(value) {
   const message = (value ?? input.value).trim()
@@ -28,7 +39,11 @@ async function send(value) {
     return
   }
 
-  messages.value.push({ role: 'user', content: message })
+  messages.value.push({
+    role: 'user',
+    content: message,
+  })
+
   input.value = ''
   loading.value = true
 
@@ -53,7 +68,9 @@ async function send(value) {
     })
   } finally {
     loading.value = false
+
     await nextTick()
+
     body.value?.scrollTo({
       top: body.value.scrollHeight,
       behavior: 'smooth',
@@ -62,7 +79,10 @@ async function send(value) {
 }
 
 function keydown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  if (
+    event.key === 'Enter' &&
+    !event.shiftKey
+  ) {
     event.preventDefault()
     send()
   }
@@ -94,10 +114,19 @@ function keydown(event) {
         <strong>대전 여행 챗봇</strong>
         <small>공공데이터 기반 안내</small>
       </div>
-      <button aria-label="챗봇 닫기" @click="open = false">×</button>
+
+      <button
+        aria-label="챗봇 닫기"
+        @click="open = false"
+      >
+        ×
+      </button>
     </header>
 
-    <div ref="body" class="chat-body">
+    <div
+      ref="body"
+      class="chat-body"
+    >
       <div class="quick-questions">
         <button
           v-for="question in questions"
@@ -109,22 +138,43 @@ function keydown(event) {
         </button>
       </div>
 
-      <div
+      <template
         v-for="(message, index) in messages"
         :key="index"
-        :class="[
-          'bubble',
-          message.role === 'assistant' ? 'bot' : 'user',
-        ]"
       >
-        {{ message.content }}
-      </div>
+        <div
+          v-if="message.role === 'assistant'"
+          class="bubble bot markdown-body"
+          v-html="renderMarkdown(message.content)"
+        ></div>
 
-      <div v-if="loading" class="bubble bot">답변을 찾는 중입니다…</div>
+        <div
+          v-else
+          class="bubble user"
+        >
+          {{ message.content }}
+        </div>
+      </template>
+
+      <div
+        v-if="loading"
+        class="bubble bot"
+      >
+        답변을 찾는 중입니다…
+      </div>
     </div>
 
-    <form class="chat-input" @submit.prevent="send()">
-      <label class="sr-only" for="chat-message">메시지</label>
+    <form
+      class="chat-input"
+      @submit.prevent="send()"
+    >
+      <label
+        class="sr-only"
+        for="chat-message"
+      >
+        메시지
+      </label>
+
       <textarea
         id="chat-message"
         v-model="input"
@@ -132,7 +182,15 @@ function keydown(event) {
         placeholder="대전 여행에 대해 물어보세요"
         @keydown="keydown"
       />
-      <button :disabled="loading || !input.trim()">전송</button>
+
+      <button
+        :disabled="
+          loading ||
+          !input.trim()
+        "
+      >
+        전송
+      </button>
     </form>
   </section>
 </template>
