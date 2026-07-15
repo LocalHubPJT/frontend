@@ -3,17 +3,27 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import LocationMap from '../components/LocationMap.vue'
 import { service } from '../services/api'
+import defaultImage from '@/assets/default-image.png'
 
 const route = useRoute()
 const item = ref(null)
 const loading = ref(true)
 const error = ref('')
 
-const fallbackImage = 'https://placehold.co/1200x700?text=No+Image'
+// 이미지 에러 상태 추적
+const imageError = ref(false)
+
+const fallbackImage = defaultImage
+
+const setFallbackImage = (event) => {
+  event.target.src = fallbackImage
+  imageError.value = true
+}
 
 async function load() {
   loading.value = true
   error.value = ''
+  imageError.value = false
 
   try {
     item.value = await service.location(route.params.id)
@@ -55,7 +65,9 @@ onMounted(load)
 
     <img
       class="detail-image"
+      :class="{ 'is-fallback': !item.image_url || imageError }"
       :src="item.image_url || fallbackImage"
+      @error="setFallbackImage"
       :alt="`${item.name} 대표 이미지`"
     >
 

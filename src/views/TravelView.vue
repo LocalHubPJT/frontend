@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LocationMap from '../components/LocationMap.vue'
 import { service } from '../services/api'
+import defaultImage from '@/assets/default-image.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,7 +17,16 @@ const loading = ref(false)
 const error = ref('')
 
 const size = 6
-const fallbackImage = 'https://placehold.co/800x500?text=No+Image'
+const fallbackImage = defaultImage
+
+// 1. 각 아이템의 이미지 에러 상태를 저장할 객체 추가
+const imageErrors = ref({})
+
+// 2. 에러 발생 시 해당 아이템 ID를 기록하고 기본 이미지로 교체하는 함수
+const handleImageError = (id, event) => {
+  event.target.src = fallbackImage
+  imageErrors.value[id] = true
+}
 
 const sorted = computed(() =>
   [...items.value].sort((a, b) => {
@@ -35,6 +45,7 @@ async function load() {
   loading.value = true
   error.value = ''
   page.value = 1
+  imageErrors.value = {}
 
   try {
     items.value = await service.locations({
@@ -118,7 +129,9 @@ watch(category, load)
         class="place-card"
       >
         <img
+          :class="{ 'is-fallback': !item.image_url || imageErrors[item.id] }"
           :src="item.image_url || fallbackImage"
+          @error="handleImageError(item.id, $event)"
           :alt="`${item.name} 대표 이미지`"
         >
         <div>
